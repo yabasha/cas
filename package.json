@@ -1,6 +1,6 @@
 {
   "name": "@yabasha/cas",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "description": "CLI scaffolding tool for the Composable AI Stack",
   "type": "module",
@@ -17,7 +17,9 @@
   "bin": {
     "cas": "./dist/cli.cjs"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "engines": {
     "node": ">=20"
   },
@@ -76,7 +78,11 @@
     "vitest": "^3.2.4"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,json,md,yml,yaml}": ["prettier --write"],
-    "*.{ts,tsx,js,jsx}": ["eslint --fix"]
+    "*.{ts,tsx,js,jsx,json,md,yml,yaml}": [
+      "prettier --write"
+    ],
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix"
+    ]
   }
 }
