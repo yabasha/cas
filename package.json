@@ -49,6 +49,10 @@
   },
   "author": "",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "dependencies": {
     "@clack/prompts": "^0.9.1",
     "commander": "^14.0.1",
