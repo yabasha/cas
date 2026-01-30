@@ -41,6 +41,14 @@ jobs:
       - name: Run tests
         run: bun run test
 
+      - name: Configure npm auth
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Verify npm auth
+        run: npm whoami
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Create Release Pull Request or Publish
         uses: changesets/action@v1
         with:
