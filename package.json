@@ -1,0 +1,78 @@
+{
+  "name": "@yabasha/cas",
+  "version": "0.1.0",
+  "private": false,
+  "description": "CLI scaffolding tool for the Composable AI Stack",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "bin": {
+    "cas": "./dist/cli.cjs"
+  },
+  "files": ["dist"],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch --onSuccess \"node dist/cli.cjs --help\"",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepare": "husky install || true",
+    "release": "changeset publish"
+  },
+  "keywords": [
+    "cli",
+    "scaffolding",
+    "monorepo",
+    "ai",
+    "composable-ai-stack",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yabasha/cas"
+  },
+  "homepage": "https://github.com/yabasha/cas#readme",
+  "bugs": {
+    "url": "https://github.com/yabasha/cas/issues"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@clack/prompts": "^0.9.1",
+    "commander": "^14.0.1",
+    "execa": "^9.5.2",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.8",
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^24.4.0",
+    "@typescript-eslint/eslint-plugin": "^8.6.0",
+    "@typescript-eslint/parser": "^8.6.0",
+    "eslint": "^9.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.30.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^16.1.6",
+    "prettier": "^3.3.3",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.2",
+    "vitest": "^3.2.4"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,md,yml,yaml}": ["prettier --write"],
+    "*.{ts,tsx,js,jsx}": ["eslint --fix"]
+  }
+}

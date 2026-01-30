@@ -1,0 +1,14 @@
+node_modules
+dist
+*.log
+*.tsbuildinfo
+coverage
+.npmrc
+.env
+.vscode
+.idea
+.DS_Store
+WARP.md
+CLAUDE.md
+AGENTS.md
+.envrc
