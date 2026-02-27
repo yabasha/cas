@@ -1,4 +1,4 @@
-import { readdir, readFile, writeFile } from 'node:fs/promises'
+import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import * as p from '@clack/prompts'
@@ -84,6 +84,333 @@ function dryRunLog(message: string): void {
 }
 
 /**
+ * Scaffold RAG module with Qdrant support
+ */
+async function scaffoldRagModule(projectPath: string, vars: TemplateVars): Promise<void> {
+  const ragDir = join(projectPath, 'packages', 'rag')
+  const srcDir = join(ragDir, 'src')
+  await mkdir(srcDir, { recursive: true })
+
+  // package.json
+  await writeFile(
+    join(ragDir, 'package.json'),
+    JSON.stringify(
+      {
+        name: `@${vars.projectName}/rag`,
+        version: '0.0.1',
+        private: true,
+        type: 'module',
+        main: './src/index.ts',
+        types: './src/index.ts',
+        scripts: {
+          typecheck: 'tsc --noEmit',
+        },
+        dependencies: {
+          '@qdrant/js-client-rest': '^1.13.0',
+          ai: '^4.3.16',
+        },
+        devDependencies: {
+          typescript: '^5.7.3',
+        },
+      },
+      null,
+      2,
+    ) + '\n',
+    'utf-8',
+  )
+
+  // tsconfig.json
+  await writeFile(
+    join(ragDir, 'tsconfig.json'),
+    JSON.stringify(
+      {
+        compilerOptions: {
+          target: 'ES2022',
+          module: 'ESNext',
+          moduleResolution: 'bundler',
+          esModuleInterop: true,
+          strict: true,
+          skipLibCheck: true,
+          outDir: './dist',
+          rootDir: './src',
+          declaration: true,
+        },
+        include: ['src'],
+      },
+      null,
+      2,
+    ) + '\n',
+    'utf-8',
+  )
+
+  // src/qdrant.ts
+  await writeFile(
+    join(srcDir, 'qdrant.ts'),
+    `import { QdrantClient } from '@qdrant/js-client-rest'
+
+const QDRANT_URL = process.env.QDRANT_URL || 'http://localhost:6333'
+const QDRANT_API_KEY = process.env.QDRANT_API_KEY
+
+/**
+ * Shared Qdrant client instance.
+ * Reads QDRANT_URL and QDRANT_API_KEY from environment variables.
+ */
+export const qdrant = new QdrantClient({
+  url: QDRANT_URL,
+  ...(QDRANT_API_KEY ? { apiKey: QDRANT_API_KEY } : {}),
+})
+`,
+    'utf-8',
+  )
+
+  // src/embeddings.ts
+  await writeFile(
+    join(srcDir, 'embeddings.ts'),
+    `import { embed, embedMany } from 'ai'
+import type { EmbeddingModel } from 'ai'
+
+/**
+ * Generate a single embedding vector for the given text.
+ */
+export async function generateEmbedding(
+  model: EmbeddingModel<string>,
+  text: string,
+): Promise<number[]> {
+  const { embedding } = await embed({ model, value: text })
+  return embedding
+}
+
+/**
+ * Generate embedding vectors for multiple texts in a single batch.
+ */
+export async function generateEmbeddings(
+  model: EmbeddingModel<string>,
+  texts: string[],
+): Promise<number[][]> {
+  const { embeddings } = await embedMany({ model, values: texts })
+  return embeddings
+}
+`,
+    'utf-8',
+  )
+
+  // src/retriever.ts
+  await writeFile(
+    join(srcDir, 'retriever.ts'),
+    `import type { EmbeddingModel } from 'ai'
+
+import { generateEmbedding, generateEmbeddings } from './embeddings.js'
+import { qdrant } from './qdrant.js'
+
+export interface Document {
+  id: string | number
+  content: string
+  metadata?: Record<string, unknown>
+}
+
+export interface SearchResult {
+  id: string | number
+  score: number
+  content: string
+  metadata?: Record<string, unknown>
+}
+
+/**
+ * Ensure a collection exists with the given vector size.
+ */
+export async function ensureCollection(
+  collectionName: string,
+  vectorSize: number,
+): Promise<void> {
+  const collections = await qdrant.getCollections()
+  const exists = collections.collections.some((c) => c.name === collectionName)
+  if (!exists) {
+    await qdrant.createCollection(collectionName, {
+      vectors: { size: vectorSize, distance: 'Cosine' },
+    })
+  }
+}
+
+/**
+ * Upsert documents into a Qdrant collection.
+ */
+export async function upsertDocuments(
+  collectionName: string,
+  model: EmbeddingModel<string>,
+  documents: Document[],
+): Promise<void> {
+  const embeddings = await generateEmbeddings(
+    model,
+    documents.map((d) => d.content),
+  )
+
+  await qdrant.upsert(collectionName, {
+    wait: true,
+    points: documents.map((doc, i) => ({
+      id: typeof doc.id === 'string' ? doc.id : doc.id,
+      vector: embeddings[i],
+      payload: {
+        content: doc.content,
+        ...(doc.metadata || {}),
+      },
+    })),
+  })
+}
+
+/**
+ * Search for similar documents by text query.
+ */
+export async function searchDocuments(
+  collectionName: string,
+  model: EmbeddingModel<string>,
+  query: string,
+  limit = 5,
+): Promise<SearchResult[]> {
+  const queryVector = await generateEmbedding(model, query)
+
+  const results = await qdrant.search(collectionName, {
+    vector: queryVector,
+    limit,
+    with_payload: true,
+  })
+
+  return results.map((r) => ({
+    id: r.id,
+    score: r.score,
+    content: (r.payload?.content as string) || '',
+    metadata: r.payload as Record<string, unknown>,
+  }))
+}
+
+/**
+ * Delete documents from a Qdrant collection by IDs.
+ */
+export async function deleteDocuments(
+  collectionName: string,
+  ids: (string | number)[],
+): Promise<void> {
+  await qdrant.delete(collectionName, {
+    wait: true,
+    points: ids,
+  })
+}
+`,
+    'utf-8',
+  )
+
+  // src/index.ts
+  await writeFile(
+    join(srcDir, 'index.ts'),
+    `export { qdrant } from './qdrant.js'
+export { generateEmbedding, generateEmbeddings } from './embeddings.js'
+export {
+  ensureCollection,
+  upsertDocuments,
+  searchDocuments,
+  deleteDocuments,
+} from './retriever.js'
+export type { Document, SearchResult } from './retriever.js'
+`,
+    'utf-8',
+  )
+
+  // docker-compose.qdrant.yml at project root
+  await writeFile(
+    join(projectPath, 'docker-compose.qdrant.yml'),
+    `services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__GRPC_PORT: 6334
+
+volumes:
+  qdrant_storage:
+`,
+    'utf-8',
+  )
+
+  // Append env vars to .env.example
+  const envExamplePath = join(projectPath, '.env.example')
+  let envContent = ''
+  try {
+    envContent = await readFile(envExamplePath, 'utf-8')
+  } catch {
+    // File may not exist
+  }
+  const ragEnvVars = `
+# RAG / Qdrant
+QDRANT_URL=http://localhost:6333
+QDRANT_API_KEY=
+`
+  await writeFile(envExamplePath, envContent + ragEnvVars, 'utf-8')
+
+  // Append RAG section to README.md
+  const readmePath = join(projectPath, 'README.md')
+  let readmeContent = ''
+  try {
+    readmeContent = await readFile(readmePath, 'utf-8')
+  } catch {
+    // File may not exist
+  }
+  const ragReadme = `
+## RAG (Retrieval-Augmented Generation)
+
+This project includes a RAG module powered by [Qdrant](https://qdrant.tech/) vector database and the Vercel AI SDK.
+
+### Setup
+
+1. **Start Qdrant** (Docker):
+   \`\`\`bash
+   docker compose -f docker-compose.qdrant.yml up -d
+   \`\`\`
+
+2. **Configure environment variables** in \`.env\`:
+   \`\`\`
+   QDRANT_URL=http://localhost:6333
+   QDRANT_API_KEY=         # optional for local development
+   \`\`\`
+
+### Usage
+
+#### Ingest documents
+
+\`\`\`typescript
+import { ensureCollection, upsertDocuments } from '@${vars.projectName}/rag'
+import { openai } from '@ai-sdk/openai'
+
+const model = openai.embedding('text-embedding-3-small')
+
+// Create collection (1536 = dimensions for text-embedding-3-small)
+await ensureCollection('docs', 1536)
+
+// Upsert documents
+await upsertDocuments('docs', model, [
+  { id: '1', content: 'Qdrant is a vector database.' },
+  { id: '2', content: 'RAG combines retrieval with generation.' },
+])
+\`\`\`
+
+#### Query documents
+
+\`\`\`typescript
+import { searchDocuments } from '@${vars.projectName}/rag'
+import { openai } from '@ai-sdk/openai'
+
+const model = openai.embedding('text-embedding-3-small')
+
+const results = await searchDocuments('docs', model, 'What is a vector database?', 5)
+console.log(results)
+\`\`\`
+`
+  await writeFile(readmePath, readmeContent + ragReadme, 'utf-8')
+}
+
+/**
  * Scaffold a new project from the template
  */
 export async function scaffold(options: CasOptions): Promise<ScaffoldResult> {
@@ -113,9 +440,7 @@ export async function scaffold(options: CasOptions): Promise<ScaffoldResult> {
       return {
         success: false,
         projectPath,
-        errors: [
-          `Directory "${options.dir}" already exists. Use --force to overwrite.`,
-        ],
+        errors: [`Directory "${options.dir}" already exists. Use --force to overwrite.`],
       }
     }
 
@@ -224,6 +549,20 @@ export async function scaffold(options: CasOptions): Promise<ScaffoldResult> {
     spinner.stop('Template variables processed')
   }
 
+  // Scaffold RAG module if requested
+  if (options.withRag) {
+    if (options.dryRun) {
+      dryRunLog('Would scaffold RAG module in packages/rag')
+      dryRunLog('Would create docker-compose.qdrant.yml')
+      dryRunLog('Would add QDRANT_URL and QDRANT_API_KEY to .env.example')
+      dryRunLog('Would append RAG documentation to README.md')
+    } else {
+      spinner.start('Scaffolding RAG module with Qdrant...')
+      await scaffoldRagModule(projectPath, templateVars)
+      spinner.stop('RAG module scaffolded')
+    }
+  }
+
   // Initialize git
   if (!options.noGit) {
     if (options.dryRun) {
@@ -272,7 +611,6 @@ export async function scaffold(options: CasOptions): Promise<ScaffoldResult> {
  * Print success message with next steps
  */
 export function printSuccessMessage(options: CasOptions): void {
-
   console.log()
   p.outro(pc.green('Project created successfully!'))
 
@@ -294,6 +632,7 @@ export function printSuccessMessage(options: CasOptions): void {
   if (options.withWorker) includedComponents.push('Worker (apps/worker)')
   if (options.withEvals) includedComponents.push('Evals (packages/evals)')
   if (options.withConfig) includedComponents.push('Config (packages/config)')
+  if (options.withRag) includedComponents.push('RAG / Qdrant (packages/rag)')
 
   if (includedComponents.length > 0) {
     console.log(pc.dim('Included components:'))
@@ -304,7 +643,9 @@ export function printSuccessMessage(options: CasOptions): void {
   }
 
   // Convex reminder
-  console.log(pc.yellow('Note: Run `npx convex dev` to initialize Convex after setting up your account.'))
+  console.log(
+    pc.yellow('Note: Run `npx convex dev` to initialize Convex after setting up your account.'),
+  )
   console.log()
 }
 

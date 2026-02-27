@@ -52,6 +52,7 @@ export async function run(argv: string[] = process.argv): Promise<void> {
       withWorker: options.withWorker || false,
       withEvals: options.withEvals || false,
       withConfig: options.withConfig || false,
+      withRag: options.withRag || false,
       all: options.all || false,
       minimal: options.minimal || false,
       force: options.force || false,
@@ -88,6 +89,7 @@ export async function run(argv: string[] = process.argv): Promise<void> {
     console.log(`    - Worker: ${finalOptions.withWorker ? 'yes' : 'no'}`)
     console.log(`    - Evals: ${finalOptions.withEvals ? 'yes' : 'no'}`)
     console.log(`    - Config: ${finalOptions.withConfig ? 'yes' : 'no'}`)
+    console.log(`    - RAG (Qdrant): ${finalOptions.withRag ? 'yes' : 'no'}`)
     console.log(`  Package manager: ${finalOptions.packageManager}`)
     console.log(`  Install dependencies: ${finalOptions.noInstall ? 'no' : 'yes'}`)
     console.log(`  Initialize git: ${finalOptions.noGit ? 'no' : 'yes'}`)
@@ -119,8 +121,7 @@ const isCjsMain =
   typeof module !== 'undefined' &&
   (require as any).main === module
 const isEsmMain =
-  typeof import.meta !== 'undefined' &&
-  (import.meta as any).url === `file://${process.argv[1]}`
+  typeof import.meta !== 'undefined' && (import.meta as any).url === `file://${process.argv[1]}`
 
 if (isCjsMain || isEsmMain) {
   run()

@@ -41,11 +41,14 @@ const COMPONENT_OPTIONS = [
     label: 'Shared Config',
     hint: 'packages/config - Shared configuration utilities',
   },
+  {
+    value: 'rag',
+    label: 'RAG (Qdrant)',
+    hint: 'packages/rag - Vector search with Qdrant + Vercel AI SDK embeddings',
+  },
 ]
 
-export async function runInteractivePrompts(
-  partial: Partial<CasOptions>,
-): Promise<CasOptions> {
+export async function runInteractivePrompts(partial: Partial<CasOptions>): Promise<CasOptions> {
   const gitUserName = await getGitUserName()
 
   p.intro(pc.bgCyan(pc.black(' Composable AI Stack ')))
@@ -98,7 +101,7 @@ export async function runInteractivePrompts(
         // Skip if preset was used
         if (partial.all || partial.minimal) {
           if (partial.all) {
-            return Promise.resolve(['api', 'worker', 'evals', 'config'])
+            return Promise.resolve(['api', 'worker', 'evals', 'config', 'rag'])
           }
           return Promise.resolve([])
         }
@@ -109,6 +112,7 @@ export async function runInteractivePrompts(
         if (partial.withWorker) preselected.push('worker')
         if (partial.withEvals) preselected.push('evals')
         if (partial.withConfig) preselected.push('config')
+        if (partial.withRag) preselected.push('rag')
 
         if (preselected.length > 0) {
           return Promise.resolve(preselected)
@@ -159,6 +163,7 @@ export async function runInteractivePrompts(
     withWorker: components.includes('worker'),
     withEvals: components.includes('evals'),
     withConfig: components.includes('config'),
+    withRag: components.includes('rag'),
     all: partial.all || false,
     minimal: partial.minimal || false,
     force: partial.force || false,

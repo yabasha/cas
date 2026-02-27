@@ -11,6 +11,7 @@ export interface CasOptions {
   withWorker: boolean
   withEvals: boolean
   withConfig: boolean
+  withRag: boolean
   all: boolean
   minimal: boolean
   force: boolean
