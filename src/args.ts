@@ -2,14 +2,19 @@ import { Command, InvalidArgumentError } from 'commander'
 
 import type { CasOptions, License, PackageManager } from './types.js'
 
-const VALID_LICENSES: License[] = ['MIT', 'Apache-2.0', 'ISC', 'GPL-3.0', 'BSD-3-Clause', 'UNLICENSED']
+const VALID_LICENSES: License[] = [
+  'MIT',
+  'Apache-2.0',
+  'ISC',
+  'GPL-3.0',
+  'BSD-3-Clause',
+  'UNLICENSED',
+]
 const VALID_PACKAGE_MANAGERS: PackageManager[] = ['bun', 'npm', 'yarn', 'pnpm']
 
 function validateLicense(value: string): License {
   if (!VALID_LICENSES.includes(value as License)) {
-    throw new InvalidArgumentError(
-      `Invalid license. Must be one of: ${VALID_LICENSES.join(', ')}`,
-    )
+    throw new InvalidArgumentError(`Invalid license. Must be one of: ${VALID_LICENSES.join(', ')}`)
   }
   return value as License
 }
@@ -40,6 +45,7 @@ export function createProgram(): Command {
     .option('--with-worker', 'Include background worker', false)
     .option('--with-evals', 'Include AI evaluation package', false)
     .option('--with-config', 'Include shared config package', false)
+    .option('--with-rag', 'Include RAG module with Qdrant vector DB', false)
     .option('--all', 'Include all optional components', false)
     .option('--minimal', 'Exclude all optional components', false)
     .option('-f, --force', 'Overwrite existing directory', false)
@@ -69,17 +75,20 @@ export function parseOptions(projectName: string | undefined, opts: any): Partia
   let withWorker = opts.withWorker
   let withEvals = opts.withEvals
   let withConfig = opts.withConfig
+  let withRag = opts.withRag
 
   if (opts.all) {
     withApi = true
     withWorker = true
     withEvals = true
     withConfig = true
+    withRag = true
   } else if (opts.minimal) {
     withApi = false
     withWorker = false
     withEvals = false
     withConfig = false
+    withRag = false
   }
 
   const result: Partial<CasOptions> = {
@@ -87,6 +96,7 @@ export function parseOptions(projectName: string | undefined, opts: any): Partia
     withWorker,
     withEvals,
     withConfig,
+    withRag,
     all: opts.all,
     minimal: opts.minimal,
     force: opts.force,
@@ -127,7 +137,8 @@ export function needsInteractiveMode(options: Partial<CasOptions>): boolean {
     !options.withApi &&
     !options.withWorker &&
     !options.withEvals &&
-    !options.withConfig
+    !options.withConfig &&
+    !options.withRag
   ) {
     return true
   }

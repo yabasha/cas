@@ -76,6 +76,7 @@ describe('parseOptions', () => {
     expect(result.withWorker).toBe(true)
     expect(result.withEvals).toBe(true)
     expect(result.withConfig).toBe(true)
+    expect(result.withRag).toBe(true)
   })
 
   it('handles --minimal preset', () => {
@@ -92,6 +93,25 @@ describe('parseOptions', () => {
     expect(result.withWorker).toBe(false)
     expect(result.withEvals).toBe(false)
     expect(result.withConfig).toBe(false)
+    expect(result.withRag).toBe(false)
+  })
+
+  it('handles --with-rag flag', () => {
+    const result = parseOptions('my-project', {
+      packageManager: 'bun',
+      force: false,
+      all: false,
+      minimal: false,
+      withApi: false,
+      withWorker: false,
+      withEvals: false,
+      withConfig: false,
+      withRag: true,
+      dryRun: false,
+      install: true,
+      git: true,
+    })
+    expect(result.withRag).toBe(true)
   })
 
   it('throws when both --all and --minimal are used', () => {
@@ -214,6 +234,15 @@ describe('needsInteractiveMode', () => {
       needsInteractiveMode({
         projectName: 'my-project',
         withApi: true,
+      }),
+    ).toBe(false)
+  })
+
+  it('returns false when --with-rag is used', () => {
+    expect(
+      needsInteractiveMode({
+        projectName: 'my-project',
+        withRag: true,
       }),
     ).toBe(false)
   })
