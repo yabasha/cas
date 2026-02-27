@@ -250,8 +250,8 @@ export async function upsertDocuments(
       id: typeof doc.id === 'string' ? doc.id : doc.id,
       vector: embeddings[i],
       payload: {
-        content: doc.content,
         ...(doc.metadata || {}),
+        content: doc.content,
       },
     })),
   })
