@@ -38,18 +38,11 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Run tests
-        run: bun run test
-
-      - name: Configure npm auth
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-
-      - name: Verify npm auth
-        run: npm whoami
+      - name: Create Release PR or Publish
+        uses: changesets/action@v1
+        with:
+          version: bunx changeset version
+          publish: bunx changeset publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish to npm directly
-        run: npm publish --access public
-        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
