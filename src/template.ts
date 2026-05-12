@@ -626,7 +626,9 @@ export function printSuccessMessage(options: CasOptions): void {
     console.log(`  ${pc.cyan(options.packageManager)} install`)
   }
 
-  console.log(`  ${pc.cyan('cp')} .env.example .env  ${pc.dim('# fill in required values')}`)
+  const copyEnvCmd =
+    process.platform === 'win32' ? 'copy .env.example .env' : 'cp .env.example .env'
+  console.log(`  ${pc.cyan(copyEnvCmd)}  ${pc.dim('# fill in required values')}`)
   console.log(`  ${pc.cyan(options.packageManager)} dev`)
   console.log()
 
