@@ -24,22 +24,17 @@ const COMPONENT_OPTIONS = [
   {
     value: 'api',
     label: 'API Service',
-    hint: 'apps/api - Hono-based REST API',
+    hint: 'apps/api - Hardened Elysia gateway (pino, CORS, bearer, rate limit, Stripe webhooks)',
   },
   {
     value: 'worker',
     label: 'Background Worker',
-    hint: 'apps/worker - Background job processor',
+    hint: 'apps/worker - BullMQ + Convex scheduled functions (Bun)',
   },
   {
     value: 'evals',
     label: 'AI Evaluations',
-    hint: 'packages/evals - AI model evaluation framework',
-  },
-  {
-    value: 'config',
-    label: 'Shared Config',
-    hint: 'packages/config - Shared configuration utilities',
+    hint: 'packages/evals - Eval harness with Langfuse scoring',
   },
   {
     value: 'rag',
@@ -101,7 +96,7 @@ export async function runInteractivePrompts(partial: Partial<CasOptions>): Promi
         // Skip if preset was used
         if (partial.all || partial.minimal) {
           if (partial.all) {
-            return Promise.resolve(['api', 'worker', 'evals', 'config', 'rag'])
+            return Promise.resolve(['api', 'worker', 'evals', 'rag'])
           }
           return Promise.resolve([])
         }
@@ -111,7 +106,6 @@ export async function runInteractivePrompts(partial: Partial<CasOptions>): Promi
         if (partial.withApi) preselected.push('api')
         if (partial.withWorker) preselected.push('worker')
         if (partial.withEvals) preselected.push('evals')
-        if (partial.withConfig) preselected.push('config')
         if (partial.withRag) preselected.push('rag')
 
         if (preselected.length > 0) {
@@ -162,8 +156,9 @@ export async function runInteractivePrompts(partial: Partial<CasOptions>): Promi
     withApi: components.includes('api'),
     withWorker: components.includes('worker'),
     withEvals: components.includes('evals'),
-    withConfig: components.includes('config'),
     withRag: components.includes('rag'),
+    // packages/config is always included — required by apps/convex
+    withConfig: true,
     all: partial.all || false,
     minimal: partial.minimal || false,
     force: partial.force || false,

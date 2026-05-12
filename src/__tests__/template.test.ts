@@ -109,8 +109,8 @@ describe('scaffold', () => {
     // Evals should be removed
     expect(existsSync(join(TEST_PROJECT_PATH, 'packages', 'evals'))).toBe(false)
 
-    // Config should be removed
-    expect(existsSync(join(TEST_PROJECT_PATH, 'packages', 'config'))).toBe(false)
+    // Config is always kept — apps/convex depends on @acme/config
+    expect(existsSync(join(TEST_PROJECT_PATH, 'packages', 'config'))).toBe(true)
   }, 60000)
 
   it('handles minimal preset correctly', async () => {
@@ -135,11 +135,12 @@ describe('scaffold', () => {
     expect(existsSync(join(TEST_PROJECT_PATH, 'apps', 'api'))).toBe(false)
     expect(existsSync(join(TEST_PROJECT_PATH, 'apps', 'worker'))).toBe(false)
     expect(existsSync(join(TEST_PROJECT_PATH, 'packages', 'evals'))).toBe(false)
-    expect(existsSync(join(TEST_PROJECT_PATH, 'packages', 'config'))).toBe(false)
 
     // Core directories should still exist
     expect(existsSync(join(TEST_PROJECT_PATH, 'apps', 'web'))).toBe(true)
+    expect(existsSync(join(TEST_PROJECT_PATH, 'apps', 'convex'))).toBe(true)
     expect(existsSync(join(TEST_PROJECT_PATH, 'packages', 'ai'))).toBe(true)
+    expect(existsSync(join(TEST_PROJECT_PATH, 'packages', 'config'))).toBe(true)
     expect(existsSync(join(TEST_PROJECT_PATH, 'packages', 'shared'))).toBe(true)
   }, 60000)
 })

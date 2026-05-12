@@ -7,7 +7,7 @@ import { printFailureMessage, printSuccessMessage, scaffold } from './template.j
 import type { CasOptions } from './types.js'
 import { checkForUpdates, formatUpdateMessage } from './utils.js'
 
-const VERSION = '0.1.0'
+const VERSION = '0.2.0'
 
 export async function run(argv: string[] = process.argv): Promise<void> {
   // Print banner
@@ -84,12 +84,11 @@ export async function run(argv: string[] = process.argv): Promise<void> {
     console.log(`  Directory: ${finalOptions.dir}`)
     console.log(`  Author: ${finalOptions.author || '(not set)'}`)
     console.log(`  License: ${finalOptions.license}`)
-    console.log(`  Components:`)
-    console.log(`    - API: ${finalOptions.withApi ? 'yes' : 'no'}`)
-    console.log(`    - Worker: ${finalOptions.withWorker ? 'yes' : 'no'}`)
-    console.log(`    - Evals: ${finalOptions.withEvals ? 'yes' : 'no'}`)
-    console.log(`    - Config: ${finalOptions.withConfig ? 'yes' : 'no'}`)
-    console.log(`    - RAG (Qdrant): ${finalOptions.withRag ? 'yes' : 'no'}`)
+    console.log(`  Optional components:`)
+    console.log(`    - API (apps/api):         ${finalOptions.withApi ? 'yes' : 'no'}`)
+    console.log(`    - Worker (apps/worker):   ${finalOptions.withWorker ? 'yes' : 'no'}`)
+    console.log(`    - Evals (packages/evals): ${finalOptions.withEvals ? 'yes' : 'no'}`)
+    console.log(`    - RAG (packages/rag):     ${finalOptions.withRag ? 'yes' : 'no'}`)
     console.log(`  Package manager: ${finalOptions.packageManager}`)
     console.log(`  Install dependencies: ${finalOptions.noInstall ? 'no' : 'yes'}`)
     console.log(`  Initialize git: ${finalOptions.noGit ? 'no' : 'yes'}`)

@@ -32,7 +32,7 @@ export function createProgram(): Command {
   const program = new Command()
     .name('cas')
     .description('CLI scaffolding tool for the Composable AI Stack')
-    .version('0.1.0')
+    .version('0.2.0')
 
   const initCommand = new Command('init')
     .alias('create')
@@ -44,7 +44,11 @@ export function createProgram(): Command {
     .option('--with-api', 'Include API service', false)
     .option('--with-worker', 'Include background worker', false)
     .option('--with-evals', 'Include AI evaluation package', false)
-    .option('--with-config', 'Include shared config package', false)
+    .option(
+      '--with-config',
+      '[deprecated] packages/config is required by apps/convex and is always included',
+      false,
+    )
     .option('--with-rag', 'Include RAG module with Qdrant vector DB', false)
     .option('--all', 'Include all optional components', false)
     .option('--minimal', 'Exclude all optional components', false)
