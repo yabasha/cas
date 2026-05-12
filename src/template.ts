@@ -9,12 +9,14 @@ import { directoryExists, exec, isOnline, removeDirectory } from './utils.js'
 
 const TEMPLATE_REPO = 'https://github.com/yabasha/composable-ai-stack.git'
 
-// Directories to remove based on component selection
+// Directories to remove based on component selection.
+// NOTE: packages/config is intentionally NOT removable — apps/convex (always
+// scaffolded) depends on @acme/config for env validation, so removing it
+// would produce a broken workspace.
 const COMPONENT_DIRS: Record<string, string> = {
   api: 'apps/api',
   worker: 'apps/worker',
   evals: 'packages/evals',
-  config: 'packages/config',
 }
 
 // Files to process for template variable replacement
@@ -481,12 +483,13 @@ export async function scaffold(options: CasOptions): Promise<ScaffoldResult> {
     spinner.stop('Cleanup complete')
   }
 
-  // Remove unselected components
+  // Remove unselected components.
+  // `withConfig` is intentionally ignored — packages/config is required by
+  // apps/convex (always present) and must remain in the scaffold.
   const componentsToRemove: string[] = []
   if (!options.withApi) componentsToRemove.push('api')
   if (!options.withWorker) componentsToRemove.push('worker')
   if (!options.withEvals) componentsToRemove.push('evals')
-  if (!options.withConfig) componentsToRemove.push('config')
 
   if (componentsToRemove.length > 0) {
     if (options.dryRun) {
@@ -623,15 +626,16 @@ export function printSuccessMessage(options: CasOptions): void {
     console.log(`  ${pc.cyan(options.packageManager)} install`)
   }
 
+  console.log(`  ${pc.cyan('cp')} .env.example .env  ${pc.dim('# fill in required values')}`)
   console.log(`  ${pc.cyan(options.packageManager)} dev`)
   console.log()
 
-  // Show included components
+  // Show included optional components
+  // (packages/config and packages/ai are always scaffolded, so omitted here.)
   const includedComponents: string[] = []
   if (options.withApi) includedComponents.push('API (apps/api)')
   if (options.withWorker) includedComponents.push('Worker (apps/worker)')
   if (options.withEvals) includedComponents.push('Evals (packages/evals)')
-  if (options.withConfig) includedComponents.push('Config (packages/config)')
   if (options.withRag) includedComponents.push('RAG / Qdrant (packages/rag)')
 
   if (includedComponents.length > 0) {
@@ -643,8 +647,11 @@ export function printSuccessMessage(options: CasOptions): void {
   }
 
   // Convex reminder
+  const convexRunner = options.packageManager === 'bun' ? 'bunx' : 'npx'
   console.log(
-    pc.yellow('Note: Run `npx convex dev` to initialize Convex after setting up your account.'),
+    pc.yellow(
+      `Note: Run \`${convexRunner} convex dev\` (inside \`apps/convex\`) to initialize Convex after setting up your account.`,
+    ),
   )
   console.log()
 }

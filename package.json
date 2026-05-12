@@ -1,6 +1,6 @@
 {
   "name": "@yabasha/cas",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": false,
   "description": "CLI scaffolding tool for the Composable AI Stack",
   "type": "module",
